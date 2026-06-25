@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shaili's Job Tracker</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; background: #f5f5f3; color: #1a1a1a; font-size: 14px; }
+header { background: #fff; border-bottom: 1px solid #e0e0e0; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+header h1 { font-size: 18px; font-weight: 600; }
+header span { font-size: 13px; color: #666; }
+.tabs { display: flex; background: #fff; border-bottom: 1px solid #e0e0e0; padding: 0 24px; }
+.tab { padding: 12px 20px; cursor: pointer; font-size: 14px; color: #666; border-bottom: 2px solid transparent; }
+.tab.active { color: #1a1a1a; border-bottom: 2px solid #1a1a1a; font-weight: 500; }
+.tab:hover:not(.active) { color: #333; background: #fafafa; }
+.toolbar { display: flex; gap: 10px; align-items: center; padding: 16px 24px; background: #fff; border-bottom: 1px solid #e0e0e0; flex-wrap: wrap; }
+.toolbar input, .toolbar select { padding: 7px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: #fff; outline: none; }
+.toolbar input[type="text"] { width: 200px; }
+.btn { padding: 7px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; }
+.btn-primary { background: #1a1a1a; color: #fff; }
+.btn-primary:hover { background: #333; }
+.btn-secondary { background: #f0f0f0; color: #333; border: 1px solid #ddd; }
+.btn-secondary:hover { background: #e5e5e5; }
+.btn-danger { background: #fee; color: #c00; border: 1px solid #fcc; font-size: 12px; padding: 4px 10px; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.stats { display: flex; gap: 12px; padding: 16px 24px; flex-wrap: wrap; }
+.stat { background: #fff; border: 1px solid #e8e8e8; border-radius: 8px; padding: 12px 16px; min-width: 100px; }
+.stat-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+.stat-value { font-size: 22px; font-weight: 600; }
+.table-wrap { overflow-x: auto; padding: 0 24px 24px; }
+table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; border: 1px solid #e8e8e8; }
+th { background: #f8f8f8; padding: 10px 12px; text-align: left; font-size: 12px; font-weight: 600; color: #555; border-bottom: 1px solid #e8e8e8; white-space: nowrap; }
+td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: top; font-size: 13px; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafafa; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+.badge-applied { background: #e8f0fe; color: #1a56db; }
+.badge-screen { background: #fef3c7; color: #92400e; }
+.badge-interview { background: #dbeafe; color: #1e40af; }
+.badge-final { background: #ede9fe; color: #5b21b6; }
+.badge-offer { background: #d1fae5; color: #065f46; }
+.badge-rejected { background: #fee2e2; color: #991b1b; }
+.badge-withdrawn { background: #f3f4f6; color: #374151; }
+.badge-hold { background: #fef3c7; color: #92400e; }
+.badge-tpm { background: #e0f2fe; color: #0369a1; }
+.badge-se { background: #fce7f3; color: #9d174d; }
+.badge-consulting { background: #f0fdf4; color: #166534; }
+.badge-other { background: #f3f4f6; color: #374151; }
+.jd-cell { max-width: 200px; }
+.jd-text { max-height: 48px; overflow: hidden; color: #555; font-size: 12px; line-height: 1.5; }
+.jd-text.expanded { max-height: none; }
+.jd-toggle { font-size: 11px; color: #888; cursor: pointer; text-decoration: underline; margin-top: 2px; display: inline-block; }
+.url-link { color: #1a56db; text-decoration: none; font-size: 12px; }
+.url-link:hover { text-decoration: underline; }
+.empty-state { text-align: center; padding: 60px 24px; color: #888; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
+.modal-bg.open { display: flex; }
+.modal { background: #fff; border-radius: 12px; padding: 24px; width: 640px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+.modal h2 { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-full { grid-column: 1 / -1; }
+.form-group label { display: block; font-size: 12px; font-weight: 500; color: #555; margin-bottom: 5px; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; font-family: Arial, sans-serif; outline: none; }
+.form-group textarea { resize: vertical; min-height: 100px; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.note-banner { background: #fffbea; border: 1px solid #f0e040; border-radius: 6px; padding: 8px 14px; font-size: 12px; color: #7a6000; margin: 12px 24px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Shaili's Job Tracker</h1>
+  <span id="last-updated"></span>
+</header>
+
+<div class="note-banner">
+  📌 This tracker is managed by Claude. To add or update an application, just tell Claude and it will update this file directly. Changes made via the Add/Edit buttons below are session-only and won't persist when you reopen the file.
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('fulltime')">Full-time</div>
+  <div class="tab" onclick="switchTab('contractor')">Contractor</div>
+  <div class="tab" onclick="switchTab('referral')" style="color:#b45309;">🎯 Needs Referral</div>
+</div>
+
+<div class="toolbar">
+  <input type="text" id="search" placeholder="Search company or role..." oninput="renderTable()">
+  <select id="filter-status" onchange="renderTable()">
+    <option value="">All statuses</option>
+    <option>Applied</option>
+    <option>Phone Screen</option>
+    <option>Interview</option>
+    <option>Final Round</option>
+    <option>Offer</option>
+    <option>Rejected</option>
+    <option>Withdrawn</option>
+    <option>On Hold</option>
+  </select>
+  <select id="filter-track" onchange="renderTable()">
+    <option value="">All tracks</option>
+    <option>TPM</option>
+    <option>Solutions Engineer</option>
+    <option>Consulting</option>
+    <option>Other</option>
+  </select>
+  <select id="filter-resume" onchange="renderTable()">
+    <option value="">All resumes</option>
+    <option>SHAILI_PARIKH_TPM.pdf</option>
+    <option>SHAILI_PARIKH_AI_TPM.pdf</option>
+    <option>SHAILI_PARIKH_SE.pdf</option>
+    <option>SHAILI_PARIKH_CONSULTING.pdf</option>
+  </select>
+  <select id="sort-by" onchange="renderTable()">
+    <option value="">Sort: Default</option>
+    <option value="date-desc">Date applied (newest)</option>
+    <option value="date-asc">Date applied (oldest)</option>
+    <option value="company">Company A–Z</option>
+    <option value="status">Status</option>
+    <option value="offer-desc">Offer (high–low)</option>
+  </select>
+  <button class="btn btn-primary" onclick="openModal()">+ Add application</button>
+</div>
+
+<div class="stats" id="stats"></div>
+
+<div class="tab-content active" id="tab-fulltime">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Company</th><th>Role</th><th>Track</th><th>Location</th>
+          <th>Date applied</th><th>Status</th><th>Contact</th><th>Resume used</th>
+          <th>Follow-up</th><th>Job description</th><th>Notes</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-fulltime"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="tab-content" id="tab-contractor">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Company</th><th>Role</th><th>Track</th><th>Location</th>
+          <th>Date applied</th><th>Status</th><th>Contact</th><th>Resume used</th>
+          <th>Rate</th><th>Follow-up</th><th>Job description</th><th>Notes</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-contractor"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="tab-content" id="tab-referral">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Company</th><th>Role</th><th>Track</th><th>Location</th><th>Offer</th>
+          <th>Status</th><th>Job URL</th><th>Job description</th><th>Notes</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-referral"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <h2 id="modal-title">Add application</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Company *</label>
+        <input type="text" id="f-company" placeholder="e.g. TikTok">
+      </div>
+      <div class="form-group">
+        <label>Role / Title *</label>
+        <input type="text" id="f-role" placeholder="e.g. Cybersecurity Resilience Specialist">
+      </div>
+      <div class="form-group">
+        <label>Track</label>
+        <select id="f-track">
+          <option>TPM</option>
+          <option>Solutions Engineer</option>
+          <option>Consulting</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Type</label>
+        <select id="f-type">
+          <option>Full-time</option>
+          <option>Contractor</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Location</label>
+        <input type="text" id="f-location" placeholder="e.g. New York, NY / Remote">
+      </div>
+      <div class="form-group">
+        <label>Date applied</label>
+        <input type="date" id="f-date">
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="f-status">
+          <option>Applied</option>
+          <option>Phone Screen</option>
+          <option>Interview</option>
+          <option>Final Round</option>
+          <option>Offer</option>
+          <option>Rejected</option>
+          <option>Withdrawn</option>
+          <option>On Hold</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Interview round</label>
+        <input type="text" id="f-round" placeholder="e.g. Round 2">
+      </div>
+      <div class="form-group">
+        <label>Contact name</label>
+        <input type="text" id="f-contact-name" placeholder="e.g. Hayley Metcalf">
+      </div>
+      <div class="form-group">
+        <label>Contact email</label>
+        <input type="text" id="f-contact-email" placeholder="e.g. hayley@tiktok.com">
+      </div>
+      <div class="form-group">
+        <label>Resume used</label>
+        <select id="f-resume">
+          <option value="">— select —</option>
+          <option>SHAILI_PARIKH_TPM.pdf</option>
+          <option>SHAILI_PARIKH_AI_TPM.pdf</option>
+          <option>SHAILI_PARIKH_SE.pdf</option>
+          <option>SHAILI_PARIKH_CONSULTING.pdf</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Follow-up date</label>
+        <input type="date" id="f-followup">
+      </div>
+      <div class="form-group">
+        <label>Offer / Rate</label>
+        <input type="text" id="f-offer" placeholder="e.g. $220K or $150/hr">
+      </div>
+      <div class="form-group">
+        <label>Application source</label>
+        <input type="text" id="f-source" placeholder="e.g. LinkedIn, Referral, Website">
+      </div>
+      <div class="form-group form-full">
+        <label>Job posting URL</label>
+        <input type="text" id="f-url" placeholder="https://...">
+      </div>
+      <div class="form-group form-full">
+        <label>Job description</label>
+        <textarea id="f-jd" placeholder="Paste the full job description here..."></textarea>
+      </div>
+      <div class="form-group form-full">
+        <label>Notes</label>
+        <textarea id="f-notes" placeholder="e.g. Referred by Bryan, round 2 pending..." style="min-height:60px;"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEntry()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+// This array is the source of truth. Claude manages it directly in this file.
+// Add/Edit via the UI works for the current browser session only.
+const DATA = [
+  // ── Full-time ──────────────────────────────────────────────────────────────
+  { id: 1,  type: 'Full-time',  company: 'TikTok',                    role: 'Cybersecurity Resilience Specialist',          track: 'TPM',         location: 'New York, NY',  date: '2026-06-19', status: 'Rejected',  round: '', contactName: 'Hayley Metcalf',    contactEmail: '', resume: 'SHAILI_PARIKH_TPM.pdf',         followup: '',           offer: '',              source: 'Recruiter', url: '', jd: '', notes: 'Round 1 with Hayley Metcalf on June 19. Rejected June 24.' },
+  { id: 2,  type: 'Full-time',  company: 'Rubrik',                    role: 'Staff PM, Enterprise AI',                      track: 'TPM',         location: 'Remote / NYC',  date: '2026-06-20', status: 'Applied',   round: '', contactName: 'Bryan (Sales Engineer)', contactEmail: '', resume: 'SHAILI_PARIKH_AI_TPM.pdf',    followup: '2026-06-25', offer: '$175.5K-$263.3K', source: 'Referral',  url: 'https://www.rubrik.com/company/careers/departments/job.7742518', jd: 'Staff Product Manager, Rubrik Security Cloud AI Platform. Own the AI Platform powering the Rubrik Security Cloud control plane. Design the system allowing AI agents to make good decisions, act safely, and scale — including governance framework, guardrails, permissions, multi-tool orchestration, failure handling, memory management, and cost containment. 9+ years of product management experience; 5+ years in enterprise IT infrastructure market; deep technical fluency in AI/ML systems, LLMs, and agentic architectures. Experience building governance, trust, or safety frameworks for AI. Hybrid (Palo Alto). $175.5K-$263.3K USD.', notes: 'Warm referral via Bryan. Ping if no recruiter by Wed June 25.' },
+  { id: 6,  type: 'Full-time',  company: 'Prudential',                role: 'IAM Implementation Lead',                      track: 'TPM',         location: '',              date: '',            status: 'Applied',   round: '', contactName: '',                   contactEmail: '', resume: 'SHAILI_PARIKH_TPM.pdf',         followup: '',           offer: '$114K-$188K',   source: '',          url: '', jd: 'Lead the design, implementation, and management of IAM services capabilities for customer and workforce-facing solutions. Partner with product owners, tech leads, and engineers to architect and improve IAM solutions. Strong ITDR focus. Role sits within Global Technology IAM Team. Salary range $114K-$188K.', notes: 'Strong ITDR match. $114K-$188K.' },
+  { id: 7,  type: 'Full-time',  company: 'Grow Therapy',              role: 'Senior TPM',                                   track: 'TPM',         location: 'NYC (Hybrid)',  date: '',            status: 'Applied',   round: '', contactName: '',                   contactEmail: '', resume: 'SHAILI_PARIKH_TPM.pdf',         followup: '',           offer: '$152K-$189K',   source: '',          url: '', jd: 'Senior Technical Program Manager - Internal Foundations. Champion critical technical and cross-functional programs ensuring seamless execution and delivery. Part of a small and growing TPM team within the engineering org, reporting to Manager of Technical Program Management. Own large-scale technical programs spanning Developer Ops, Security Process, and Platform Scalability and Reliability. Partner with engineering, product, data, and design leaders to align priorities and drive efficiency.', notes: 'Mental health mission. $152K-$189K. NYC hybrid.' },
+  { id: 8,  type: 'Full-time',  company: 'Grow Therapy',              role: 'Program Manager, AI Operations Enablement',    track: 'TPM',         location: 'New York, NY',  date: '',            status: 'Applied',   round: '', contactName: '',                   contactEmail: '', resume: 'SHAILI_PARIKH_CONSULTING.pdf',   followup: '',           offer: '$144K-$168K',   source: '',          url: '', jd: 'Join Grow Therapy\'s newly formed AI Center of Excellence (CoE) — the engine behind Grow\'s AI transformation within Operations. High-impact, cross-functional role at the intersection of operational strategy, emerging technology, and organizational change. Own delivery of AI and automation workflows from scoping through launch — coordinating vendor builds, technical integrations, and UAT. Translate automation opportunities into structured project plans with clear milestones, owners, and success criteria. Requires 5–8+ years in program management or operations in a high-growth or tech-forward environment. Posted May 2026, NYC.', notes: 'AI CoE role. $144K-$168K.' },
+  { id: 9,  type: 'Full-time',  company: 'Alloy',                     role: 'Implementation Manager',                       track: 'Consulting',  location: '',              date: '',            status: 'Applied',   round: '', contactName: '',                   contactEmail: '', resume: 'SHAILI_PARIKH_CONSULTING.pdf',   followup: '',           offer: '$130K-$190K',   source: '',          url: '', jd: 'Implementation Managers are the owners and leads of client implementations at Alloy (identity risk management fintech). Acting as primary point of contact from Sales handoff through go-live, combining rigorous project management with a consultative approach to guide financial institutions, banks, and fintechs through onboarding. Own client implementations end-to-end, driving clients to successful, on-time go-live across 4–12 month engagement cycles. Maintain working knowledge of Alloy\'s platform; keep project records in Rocketlane and Salesforce. Requires 4+ years in implementation management, technical project management, or professional services. Hybrid — onsite 3x/week local, 1x/quarter remote.', notes: 'Fintech implementation. $130K-$190K plus equity.' },
+  { id: 10, type: 'Full-time',  company: 'Crowe Studio',              role: 'AI Solutions Consulting Lead',                 track: 'Consulting',  location: '',              date: '',            status: 'Applied',   round: '', contactName: '',                   contactEmail: '', resume: 'SHAILI_PARIKH_CONSULTING.pdf',   followup: '',           offer: '$102K-$204K',   source: '',          url: '', jd: '', notes: 'FDE dream role. 80% travel. $102K-$204K.' },
+  { id: 11, type: 'Full-time',  company: 'Glean',                     role: 'AI Success Manager',                           track: 'Consulting',  location: '',              date: '',            status: 'Applied',   round: '', contactName: 'Ankush Sawant',      contactEmail: '', resume: 'SHAILI_PARIKH_CONSULTING.pdf',   followup: '',           offer: '$140K-$200K OTE', source: '',        url: '', jd: 'Help customers achieve real business outcomes through Glean\'s enterprise AI platform. Serve as primary lead on new customer deployments including hands-on guidance for SSO and connector setup. Own end-to-end delivery from kickoff to go-live. Glean\'s Enterprise Graph and Personal Knowledge Graph map relationships between people, content, and activity, delivering personalized, context-aware responses. AI fluency core to the role — interview process includes an AI-focused exercise. Role available East/West/Central. $140K-$200K OTE.', notes: 'Message sent to Ankush Sawant. $140K-$200K OTE.' },
+  { id: 13, type: 'Full-time',  company: 'Academian Inc (Banking)',   role: 'Delivery Manager',                             track: 'TPM',         location: '',              date: '',            status: 'Applied',   round: '', contactName: 'Saurabh Katiyar',    contactEmail: '', resume: 'SHAILI_PARIKH_TPM.pdf',         followup: '',           offer: '$200K-$220K',   source: '',          url: '', jd: '', notes: 'Message sent to Saurabh Katiyar. Salary stated $200-$220K.' },
+  { id: 14, type: 'Full-time',  company: 'EliseAI',                   role: 'Engagement Lead, Future Platforms',            track: 'Consulting',  location: 'New York, NY',  date: '',            status: 'Applied',   round: '', contactName: '',                   contactEmail: '', resume: 'SHAILI_PARIKH_CONSULTING.pdf',   followup: '',           offer: '$190K-$250K',   source: '',          url: 'https://jobs.ashbyhq.com/eliseai/7ada3ab7-b595-47cc-84d6-6787a55cc0b4', jd: 'Help found and scale a critical new function at EliseAI: taking future platform products from early customer promise to live, adopted, business-impacting deployments. Cross-functional, high-autonomy role at the intersection of product, strategy, and execution. Future Platforms team operates as a startup within a startup — Seed/Series A speed with Series E capital, deep C-suite involvement (CEO, CRO, CSO, CTO). Responsibilities: lead discovery, scoping, and decisioning; run multi-threaded project plans under ambiguity; partner with Product/Engineering to define net-new workflows; build repeatable processes and templates. In-person 4-5 days/week NYC. Salary $190K-$250K.', notes: 'AI startup Series E. $190K-$250K plus equity. Note: salary higher than originally noted.' },
+  { id: 16, type: 'Full-time',  company: 'Network Infrastructure PM', role: 'Project Manager',                              track: 'TPM',         location: '',              date: '',            status: 'Applied',   round: '', contactName: '',                   contactEmail: '', resume: 'SHAILI_PARIKH_TPM.pdf',         followup: '',           offer: '$110K-$125K',   source: '',          url: '', jd: '', notes: 'Practice interviews. $110K-$125K.' },
+  { id: 17, type: 'Full-time',  company: 'Macy\'s',                   role: 'Digital Program Manager',                      track: 'TPM',         location: '',              date: '',            status: 'Applied',   round: '', contactName: '',                   contactEmail: '', resume: 'SHAILI_PARIKH_TPM.pdf',         followup: '',           offer: '',              source: '',          url: '', jd: '', notes: '' },
+  { id: 18, type: 'Full-time',  company: 'Walmart Tech',              role: 'Senior Manager, Technology Operations',        track: 'TPM',         location: 'Hoboken, NJ',   date: '',            status: 'On Hold',   round: '', contactName: '',                   contactEmail: '', resume: 'SHAILI_PARIKH_TPM.pdf',         followup: '',           offer: '$108K-$216K',   source: '',          url: '', jd: 'Senior Manager, Technology Operations at Walmart Tech. Lead high-performing talent or operate as an individual strategic leader driving enterprise-wide initiatives. Provide thought leadership on strategic initiatives, conduct research, gap analysis, and make recommendations aligned with product strategy. Strong strategic mindset required; comfortable solving complex, ambiguous problems. Product-savvy, highly analytical, able to influence senior stakeholders and build alignment across diverse teams. Requires 5+ years in program/project management (Bachelor\'s) or 4+ years (Master\'s) in related field. Salary $108K-$216K (Hoboken/NYC range). Apply after resume coach refresh.', notes: 'Hoboken. Apply after resume coach. $108K-$216K.' },
+  { id: 19, type: 'Full-time',  company: 'White & Case',              role: 'Manager, Innovation and AI',                   track: 'Consulting',  location: 'New York, NY',  date: '',            status: 'On Hold',   round: '', contactName: '',                   contactEmail: '', resume: 'SHAILI_PARIKH_CONSULTING.pdf',   followup: '',           offer: '$164K-$225K',   source: '',          url: 'https://wd1.myworkdaysite.com/recruiting/whitecase/External/job/New-York/Manager--Innovation---AI_JR102435-1', referral: true, jd: 'Position Summary: The Manager, Innovation & AI serves as a strategic catalyst within White & Case\'s award-winning Innovation & AI team, driving the firm\'s vision to redefine legal technology leadership. This role is responsible for evaluating, implementing, and accelerating the adoption of cutting-edge technology and AI solutions, ensuring the firm remains at the forefront of industry advancement. By partnering with cross-functional experts and the broader Practice Solutions team, the Manager spearheads transformative initiatives that deliver measurable impact across practice groups and offices. Through the orchestration and optimization of attorney workflows, this position enables the firm to achieve strategic objectives with rigor and agility, reinforcing White & Case\'s unwavering commitment to operational excellence and continuous innovation.\n\nResponsibilities: Consult with and advise lawyers, legal staff and clients regarding the most effective use of technology and AI in their matters; work with them on projects including contract management, contract automation, transaction management; oversee each to ensure quality and success. Manage the selection, implementation, roll-out and adoption phases of cutting-edge technologies, with specific emphasis on AI technologies. Coordinate with other business services including technical staff and procurement. Assist with testing new technology and provide feedback to project teams and vendors. Introduce the technology to matter teams and identify applications. Take ownership of the operation management of live client-facing programs, taking responsibility for the overall delivery of services. Collect and analyse usage and other metrics to recommend changes and enhancements. May involve international travel. Assist with managing the pipeline of technology and innovation opportunities.\n\nEssential Job Requirements: Thorough knowledge of popular legal tech applications including AI legal workbench tools, firm-wide AI assistants, due diligence document review tools, contract automation, contract management, transaction management, collaboration tools and other legal technologies. Experience implementing solutions including automation tools (Contract Express or HotDocs), AI-enabled tools (Office & Dragons, Harvey, Legora, vLex, or Hebbia) and collaboration tools such as HighQ. Understanding of typical practice workflows and processes. Expertise in Microsoft Office; data analytics platforms (Tableau or PowerBI) a plus. Consultancy skills to bridge the gap between business and technology teams; excellent communication and presentation skills. Diplomacy skills to assist with change management; ability to build consensus and work effectively with a cross-functional, global team, and with lawyers at all seniority levels. Project management skills in a matrixed, non-hierarchical environment. 5 years of professional experience in a firm, legal department or legal tech company required. Bachelor\'s degree required; JD and/or law-related degree a plus. Full-time, New York office. Reports to Senior Manager, Innovation & AI. Compensation: $164,000 - $225,000.', notes: 'Minor resume tweak needed. $164K-$225K.' },
+  { id: 20, type: 'Full-time',  company: 'DTCC',                      role: 'Director, Cloud Engineering Portfolio Governance', track: 'TPM',      location: '',              date: '',            status: 'Applied',   round: '', contactName: 'Shital D',           contactEmail: '', resume: 'SHAILI_PARIKH_TPM.pdf',         followup: '',           offer: '',              source: '',          url: '', jd: 'Director-level role overseeing cloud engineering portfolio governance at DTCC (Depository Trust & Clearing Corporation). Involves IT delivery governance and portfolio execution, providing oversight across major technology programs, leading planning and governance of large-scale releases, and managing cloud engineering strategy. Requires deep cloud platform expertise (AWS/Azure/GCP), containerization, and infrastructure-as-code. Requires 10+ years in engineering leadership.', notes: 'Director level title upgrade. Message Shital D on LinkedIn.' },
+  { id: 21, type: 'Full-time',  company: 'Amazon',                    referral: true, role: 'Senior TPM, Catalog AI',                       track: 'TPM',         location: 'New York, NY',  date: '',            status: 'On Hold',   round: '', contactName: '',                   contactEmail: '', resume: 'SHAILI_PARIKH_AI_TPM.pdf',    followup: '',           offer: '$163K-$221K',   source: '',          url: 'https://www.amazon.jobs/jobs/10372636', jd: 'Senior Technical Program Manager (TPM), Amazon Catalog - Product Relationships. Drive complex, cross-organizational programs enabling new types of product relationships across Amazon\'s Catalog. Define systems and policies for how brands merchandise their products on Amazon. Enable innovative ways for customers to find related products (newer versions, branded collections, product lines). Work at Amazon Catalog scale (billions of products). Partner with engineering and product teams to build new APIs, define data models, develop quality metrics, and drive data acquisition leveraging generative AI. High-ambiguity, high-impact role. Posted March-April 2026. $163K-$221K.', notes: 'Need referral. $163K-$221K.' },
+  { id: 22, type: 'Full-time',  company: 'Amazon Web Services',       role: 'Principal Engagement Manager',                 track: 'Consulting',  location: '',              date: '',            status: 'On Hold',   round: '', contactName: '',                   contactEmail: '', resume: 'SHAILI_PARIKH_CONSULTING.pdf',   followup: '',           offer: '$201K-$271K',   source: '',          url: 'https://www.amazon.jobs/en/jobs/10436463/principal-engagement-manager-aws-professional-services', referral: true, jd: 'As a Principal Engagement Manager in AWS Professional Services, you will be instrumental in leading large-scale, complex projects that integrate multiple work streams and serve as the bridge between AWS cross-functional teams (ProServe, Sales) and customer executive teams, providing high-level briefings to Senior Vice Presidents (SVPs) and Vice Presidents (VPs).\n\nKey Responsibilities: Define, plan, and manage complex, integrated project workstreams across multiple strategic opportunities. Lead project planning, scheduling, and coordination to ensure timely delivery and high-quality outcomes. Take full responsibility for the engagement\'s success, tracking performance metrics and adjusting strategies as necessary to meet business objectives. Lead and manage complex cloud migration and implementation projects while leveraging comprehensive knowledge of AWS services, architectures, and best practices to guide technical decisions and strategic planning. Develop and implement risk management plans to mitigate project risks. Lead and mentor junior engagement managers. Participate in on-site visits, understand customer requirements, propose and deliver ProServe offerings such as mass migration programs, and help develop custom solution engagements.\n\nRequired Qualifications: 8+ years of direct experience in cloud computing. Experience in project management of technical programs. 3+ years of direct client relationship management including presentations to C-level executives. Bachelor\'s degree in Computer Science, Engineering, related field, or equivalent experience.\n\nPreferred Qualifications: Deep knowledge of scaled agile and program and project management best practices. Proven experience defining and managing KPIs/SLAs to drive multi-million dollar businesses with regular reporting to senior leadership. Experience applying AWS frameworks like Well-Architected and Cloud Adoption Framework. Proven ability to establish technical credibility with engineering teams and senior technical decision-makers.\n\nCompensation: $201,000 - $271,000.', notes: 'Need referral. $201K-$271K.' },
+  { id: 23, type: 'Full-time',  company: 'JPMorgan Chase',            role: 'Lead Technical Program Manager',               track: 'TPM',         location: 'Jersey City, NJ', date: '',          status: 'On Hold',   round: '', contactName: '',                   contactEmail: '', resume: 'SHAILI_PARIKH_TPM.pdf',         followup: '',           offer: '',              source: '',          url: 'https://jpmc.fa.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/job/210719063', referral: true, jd: 'As a Lead Technical Program Manager within Corporate - AI/ML Data Platforms (AMDP) at JPMorgan Chase, you will spearhead complex, multi-functional technology projects and programs that significantly impact the experiences of clients, employees, and stakeholders across the firm. You will utilize your advanced analytical reasoning and adaptability to deconstruct business, technical, and operational objectives into manageable tasks, effectively navigating ambiguity and promoting transformative change. Your technical fluency will be crucial in managing resources, budgets, and cross-functional teams to deliver innovative solutions that align with the firm\'s strategic goals.\n\nJob responsibilities:\n- Develops and implements strategic technical program plans, aligning with organizational goals and cross-functional collaboration\n- Oversees complex technology project and program execution, budgets, and timelines while mitigating risks and addressing roadblocks\n- Fosters strong relationships with stakeholders, clients, and cross-functional teams, providing direction and defining decision-making procedures for beneficial outcomes\n- Guides the selection and implementation of appropriate technologies, platforms and software tools leveraging advanced technical fluency\n- Aligns sprint planning, release cycles and captures clear objectives, milestones and timelines\n- Champions continuous improvement by identifying process optimization opportunities, incorporating best practices, and staying abreast of emerging technologies\n- Drives the strategy for Data Infrastructure Engineering including integration with key SaaS partners\n- Leads the execution of critical data initiatives focused on enabling access to data, data governance, and entitlements, as well as building key data infrastructure using SaaS platforms and AWS\n- Partners with the product organization to drive business outcomes, ensuring technical programs are aligned with strategic business goals\n- Prepares and delivers comprehensive reports and presentations to senior leadership, including the Operating Committee\n\nRequired qualifications, capabilities, and skills:\n- 5+ years of experience or equivalent expertise in technical program management, leading complex technology projects and programs in a large organization\n- Demonstrated proficiency in technical solutions, vendor product knowledge, managing vendor relations, and implementing solutions\n- Advanced analytical reasoning skills, applying critical thinking and problem-solving techniques to break down business, technical, and operational objectives\n- Proven ability in leading through change, managing dependencies, and controlling change in high-pressure, shifting environments\n- Advanced expertise in stakeholder management, establishing productive relationships, and driving beneficial outcomes aligned with firm objectives', notes: 'Need referral.' },
+  { id: 24, type: 'Full-time',  company: 'Uber',                      role: 'Senior Strategy & Transformational Lead, Field Ops', track: 'Consulting', location: 'New York, NY', date: '',            status: 'On Hold',   round: '', contactName: '',                   contactEmail: '', resume: 'SHAILI_PARIKH_CONSULTING.pdf',   followup: '',           offer: '$203K-$225.5K', source: '',          url: 'https://www.uber.com/global/en/careers/list/159757/', referral: true, jd: 'About the Role: This role is the strategy and transformation partner to a FieldOps Lead Director who owns end-to-end operational delivery and stakeholder relationships for Delivery and B2B. While you will not run day-to-day operations, you will lead the transformation of how the function operates—diagnosing where the current model breaks, defining what needs to change, and driving those changes through to execution across teams, partners, and stakeholders. You will operate in a high-ambiguity, high-impact environment, working closely with senior leaders across Operations, Product, and Tech to turn strategy into measurable outcomes.\n\nWhat You Will Do:\n1. Identify, Structure, and Solve High-Impact Problems — Diagnose the most critical inefficiencies across cost, quality, and operating model (e.g., COE vs BPO, cost, support process flow, and footprint). Identify root causes behind challenges such as the quality of support and tech adoption (automation or AI). Translate complex problems into clear hypotheses, priorities, and solution paths. Design scalable, structural solutions and drive improvements in how the function operates (roles, governance, decision-making).\n2. Translate Strategy into Execution — Translate strategic priorities from FieldOps and stakeholders (CX teams, Ops teams) into clear execution plans. Convert ambiguous priorities into structured roadmaps, sequencing, and trade-offs. Drive alignment across regions and functions. Ensure initiatives move from idea to implementation.\n3. Drive Tech and AI Adoption in Operations — Identify, prioritize, and quantify the highest-impact automation and GenAI opportunities to drive measurable improvements in quality, speed, and cost. Partner with Product and Engineering to prioritize solutions. Own end-to-end rollout of tech from pilot to full-scale operations adoption. Ensure tech readiness of process and people. Create strong governance and continuous monitoring to ensure tools and AI systems meet high standards of accuracy and quality.\n4. Develop the Customer Insights Flywheel — Turn frontline operational signals into structured, high-quality insights. Identify recurring pain points, root causes, and systemic issues. Connect insights to business impact (cost, growth, risk, customer experience). Build a repeatable model from observation to insight to action to impact.\n\nBasic Qualifications: 10+ years of experience in consulting, operations, or program leadership in a global tech environment. Proven track record solving complex, cross-functional problems. Experience driving large-scale transformation initiatives. Strong analytical skills and ability to translate data into decisions. Ability to influence senior stakeholders without direct authority.\n\nPreferred Qualifications: Experience in customer operations, marketplaces, or contact centers. Exposure to automation or AI in operational environments. Experience working in highly matrixed organizations. Strong problem structuring and communication skills.\n\nNew York, NY base salary range: $203,000 - $225,500 per year, plus bonus program and equity award eligibility.', notes: 'Need referral. $203K-$225K.' },
+  { id: 25, type: 'Full-time',  company: 'Abacus Group',              role: 'HRIS Workday Specialist, AVP',                 track: 'TPM',         location: '',              date: '',            status: 'On Hold',   round: '', contactName: 'Jeremy Lieberman',   contactEmail: '', resume: 'SHAILI_PARIKH_TPM.pdf',         followup: '',           offer: '$240K+ TC',     source: 'Inbound',   url: '', jd: '', notes: 'Inbound from Jeremy Lieberman. $240K+ TC. Respond to Jeremy.' },
+  // ── Added June 24-25, 2026 ────────────────────────────────────────────────
+  { id: 26, type: 'Full-time',  company: 'VERSANT Media',             role: 'Product Manager, Platform',                    track: 'TPM',         location: 'Englewood Cliffs, NJ', date: '2026-06-24', status: 'Applied',  round: '', contactName: '', contactEmail: '', resume: 'SHAILI_PARIKH_TPM.pdf',       followup: '', offer: '$194K-$215K', source: '', url: '', jd: 'Product Manager for infrastructure platform at VERSANT Media. Support delivery of reliable, scalable, and compliant tools and platforms powering content ingest, fulfillment, scheduling, and distribution across platforms and endpoints. Define, refine, and prioritize product backlog in alignment with business priorities. Engage with operational stakeholders to clarify priorities and ensure shared understanding of goals. Requires 3+ years in product ownership, product management, or technical project management, ideally in media or broadcast. Familiarity with content workflows: ingest, scheduling, playout, metadata packaging, or distribution tooling. $194K-$215K.', notes: 'Infrastructure platform PM role. $194K-$215K.' },
+  { id: 27, type: 'Full-time',  company: 'Compass',                   role: 'Technical Program Manager',                    track: 'TPM',         location: '',              date: '2026-06-24', status: 'Applied',  round: '', contactName: '', contactEmail: '', resume: 'SHAILI_PARIKH_TPM.pdf',       followup: '', offer: '$173K-$192K', source: '', url: '', jd: 'Drive high-impact initiatives across Compass (real estate tech). Projects range from deep technical platform improvements to third-party SaaS implementations to standardizing processes and metrics. Manage full lifecycle of key programs including functional plans, stakeholder communication, and issue resolution. Resolve dependencies, evaluate technical risk, track progress, and set accountability. Oversee third-party software management. Requires BS/MS in Computer Science or related field; 7+ years of TPM experience in a large high-pace tech environment. Strong ability to influence stakeholders through data-driven reporting. $173K-$192K plus equity.', notes: 'Real estate tech company. $173K-$192K plus equity.' },
+  { id: 28, type: 'Full-time',  company: 'Decagon',                   role: 'Engagement Lead',                              track: 'Consulting',  location: '',              date: '2026-06-24', status: 'Applied',  round: '', contactName: '', contactEmail: '', resume: 'SHAILI_PARIKH_CONSULTING.pdf', followup: '', offer: '$150K-$220K', source: '', url: 'https://jobs.ashbyhq.com/decagon', jd: 'Engagement Lead at Decagon, the leading conversational AI agent platform (a16z backed, Series C). Work directly with enterprise customers to design, deploy, and optimize AI agents. Embed deeply with strategic customers, understand their business challenges, serve as strategic advisor to their AI roadmap. Act as bridge between customers and engineering. Build, design and optimize enterprise-quality AI agents in collaboration with customers. Customers include Avis Budget Group, Cash App, Square, Chime, Oura Health. Cross-channel deployment: voice, chat, email, SMS. $150K-$220K.', notes: 'AI agent platform, a16z backed. $150K-$220K.' },
+  { id: 29, type: 'Full-time',  company: 'DTCC',                      role: 'IT Release Management Director',               track: 'TPM',         location: '',              date: '2026-06-24', status: 'Applied',  round: '', contactName: '', contactEmail: '', resume: 'SHAILI_PARIKH_TPM.pdf',       followup: '', offer: '',           source: '', url: '', jd: 'Director-level role at DTCC (Depository Trust & Clearing Corporation) leading IT Release Management. Accountable for end-to-end planning, governance, and execution of major releases across multiple product platforms. Provide leadership and oversight of the Major Release Management team. Oversee IT delivery governance and portfolio execution. Financial market infrastructure company managing post-trade processing. Focus: release governance, portfolio management, cross-platform coordination.', notes: 'Financial market infrastructure. Release governance and portfolio management.' },
+  { id: 30, type: 'Full-time',  company: 'Reference Point RGP',       role: 'Senior Manager, Technology and Strategy',      track: 'Consulting',  location: '',              date: '2026-06-24', status: 'Applied',  round: '', contactName: 'Svea Meyer', contactEmail: '', resume: 'SHAILI_PARIKH_CONSULTING.pdf', followup: '', offer: '$145K-$200K', source: '', url: '', jd: 'Senior Manager, Technology and Strategy at Reference Point (RGP) consulting firm. Specializes in Banking and Capital Markets. RGP provides on-demand talent, business transformation, and outsourced professional services across strategy, finance, technology, risk management, operations, and internal audit. Role focuses on technology strategy and delivery within financial services clients. $145K-$200K.', notes: 'Banking and Capital Markets consulting. $145K-$200K. Message sent to Svea Meyer.' },
+  { id: 31, type: 'Full-time',  company: 'BurchWorks client',         role: 'Product Manager, AI',                          track: 'TPM',         location: '',              date: '2026-06-24', status: 'Applied',  round: '', contactName: '', contactEmail: '', resume: 'SHAILI_PARIKH_TPM.pdf',       followup: '', offer: '$200K-$220K', source: '', url: '', jd: 'AI Product Manager role at a financial services firm placed via BurchWorks recruiting. Focuses on AI product development and strategy within a financial services context. Target compensation $200K-$220K.', notes: 'Financial services AI product role. $200K-$220K target stated.' },
+  { id: 32, type: 'Full-time',  company: 'Figma',                     role: 'Technical Program Manager, Data Science',      track: 'TPM',         location: 'San Francisco, CA / New York, NY', date: '', status: 'On Hold',  round: '', contactName: '', contactEmail: '', resume: 'SHAILI_PARIKH_TPM.pdf',       followup: '', offer: '$185K-$317K', source: '', url: 'https://job-boards.greenhouse.io/figma/jobs/6009613004', referral: true, jd: 'Figma is growing our team of passionate creatives and builders on a mission to make design accessible to all. Figma\'s platform helps teams bring ideas to life—whether you\'re brainstorming, creating a prototype, translating designs into code, or iterating with AI. Data Science is central to how we measure, improve, and scale it. We\'re on a mission to make data self-serve for every Figmate: moving from a world where every data question requires filing a request to a DS or DE, to one where anyone can ask a question in plain language and get a trustworthy answer in minutes. We\'re hiring Figma\'s first dedicated Technical Program Manager for Data Science to own that mission — driving our multi-phase Self-Serve Analytics program from semantic layer expansion through the Figma Data Assistant, while building the operational foundation for a growing DS org.\n\nWhat you\'ll do at Figma:\n- Own end-to-end program delivery for Figma\'s Self-Serve Analytics initiative that includes semantic layer expansion, Slack bot launch, automated eval framework, and the Figma Data Assistant\n- Coordinate delivery across Data Engineering, DS ICs, Security, IT, and business stakeholders (Sales, Product, Finance, Research) to expand self-serve data coverage and drive adoption\n- Lead the governance and security work stream: work with Security and IT on LLM data access policies, PII guardrails, access controls, and LLM provider approvals\n- Drive adoption and change management — build champion networks, run training programs, and meet Figmates where they work (Slack, Notion) to shift from request-based to self-serve data culture\n- Build and maintain DS org operations: planning cycles, headcount tracking, onboarding programs, and team rhythms for a growing org\n- Own program-level success metrics: % of data questions answered via self-serve, time-to-insight, DS ad-hoc request volume reduction\n- Work closely with peer TPMs & Data Scientists (AI, Infra, Performance) to coordinate on overlapping platform programs and shared data infrastructure needs\n\nWe\'d love to hear from you if you have:\n- 5+ years of technical program management experience (or equivalent) driving data infrastructure, analytics platform, or data democratization programs\n- Hands-on experience with modern data stacks: you\'re comfortable discussing semantic layers, data catalogs, BI tooling (Hex, Sigma), and AI-powered query interfaces (Cortex Analyst, RAG) at a program level\n- A track record of driving adoption — not just shipping internal tools, but changing behavior across technical and non-technical audiences through change management, enablement, and champion programs\n- Strong cross-functional program delivery: planning, dependency management, stakeholder alignment across deeply distributed teams\n\nNice to have:\n- Hands-on familiarity with dbt, Snowflake Semantic Views, Acryl, Dagster, or similar data engineering tooling\n- Experience building or scaling eval frameworks for AI-generated outputs (golden SQL, accuracy dashboards, regression detection)\n- Background in data-driven product analytics or developer tools\n\nAnnual Base Salary Range: $185,000 - $317,000 USD (San Francisco or New York hub offices).', notes: 'Need referral. $185K-$317K. Too competitive to cold apply.' },
+  // ── Contractor ────────────────────────────────────────────────────────────
+  { id: 3,  type: 'Contractor', company: 'Horizontal Talent',         role: 'Senior Technical Program Manager II',          track: 'TPM',         location: 'Remote',        date: '',            status: 'Applied',   round: '', contactName: 'Alex (AI Recruiter)', contactEmail: '', resume: 'SHAILI_PARIKH_TPM.pdf',        followup: '',           offer: '$49-$86/hr',    source: 'Recruiter', url: '', jd: 'Senior Technical Program Manager role via Horizontal Talent (staffing agency). Lead large-scale technology initiatives supporting supply chain, logistics, and product lifecycle systems. Remote position. Drive impactful projects in a collaborative environment. $49-$86/hr contract rate.', notes: 'AI recruiter Alex already reached out. $49-$86/hr.' },
+  { id: 4,  type: 'Contractor', company: 'Academian Inc',             role: 'Senior Technical Program Manager',             track: 'TPM',         location: '',              date: '',            status: 'Applied',   round: '', contactName: 'Khushbu Jha',        contactEmail: '', resume: 'SHAILI_PARIKH_TPM.pdf',         followup: '',           offer: '',              source: '',          url: '', jd: '', notes: 'Direct message sent to Khushbu Jha.' },
+  { id: 5,  type: 'Contractor', company: 'Motion Recruitment',        role: 'Lead Technical Project Manager',               track: 'TPM',         location: '',              date: '',            status: 'Applied',   round: '', contactName: 'Nicolas Stizza',     contactEmail: '', resume: 'SHAILI_PARIKH_TPM.pdf',         followup: '',           offer: '',              source: '',          url: '', jd: '', notes: 'Message sent to Nicolas Stizza. 8-month contract, conversion potential.' },
+  { id: 12, type: 'Contractor', company: 'BIP US',                    role: 'Digital PMO',                                  track: 'TPM',         location: '',              date: '',            status: 'Applied',   round: '', contactName: '',                   contactEmail: '', resume: 'SHAILI_PARIKH_TPM.pdf',         followup: '',           offer: '$65-$90/hr',    source: '',          url: '', jd: '', notes: 'Stretch apply. $65-$90/hr.' },
+  { id: 15, type: 'Contractor', company: 'NTT DATA',                  role: 'AI Business Analyst',                          track: 'TPM',         location: 'Jersey City, NJ', date: '',          status: 'Applied',   round: '', contactName: '',                   contactEmail: '', resume: 'SHAILI_PARIKH_TPM.pdf',         followup: '',           offer: '$60-$77/hr',    source: '',          url: '', jd: '', notes: 'Practice interviews. $60-$77/hr. Jersey City.' },
+  { id: 33, type: 'Contractor', company: 'KPMG',                      role: 'Digital Enablement Manager, AI OCM',           track: 'Consulting',  location: '',              date: '2026-06-24', status: 'Applied',   round: '', contactName: '',                   contactEmail: '', resume: 'SHAILI_PARIKH_CONSULTING.pdf',   followup: '',           offer: '',              source: '',          url: 'https://www.kpmguscareers.com/jobdetail/?jobId=123086-B', jd: 'Oversee Digital Enablement activities with a focus on AI programs. Define, develop, and execute all resources required to support full enablement of digital capabilities by the target audience. Execute and monitor the program communications plan to drive adoption. Prepare all communications materials and campaigns. Maintain Organizational Change Management (OCM) content repository. Coordinate with technical, risk, legal, and security team leads. Drive alignment across stakeholders. Requires 5+ years leading strategic digital enablement and change management projects, preference for AI-related projects. Writing experience in marketing/communications for technology products or OCM teams. Big 4 consulting firm.', notes: 'AI change management and adoption. Big 4 firm.' },
+  { id: 34, type: 'Contractor', company: 'Randstad',                   role: 'Senior Project Manager',                       track: 'TPM',         location: 'New York, NY',  date: '2026-06-24', status: 'Applied',   round: '', contactName: '',                   contactEmail: '', resume: 'SHAILI_PARIKH_TPM.pdf',         followup: '',           offer: '$65-$75/hr',    source: '',          url: '', jd: 'Senior Project Manager contractor role via Randstad (NYC, Hybrid). Requires 5-10 years of Project Management experience, experience managing at least 5 full project lifecycles, and strong hands-on experience with Planview. Expertise in Agile and Waterfall methodologies. Finance systems project experience preferred. $65.86-$75.86/hr.', notes: 'Planview tool required. $65-$75/hr. NYC.' }
+];
+// ─────────────────────────────────────────────────────────────────────────────
+
+let sessionData = DATA.map(r => ({...r}));
+let currentTab = 'fulltime';
+let editingId = null;
+
+function load() { return sessionData; }
+function save(data) {
+  sessionData = data;
+  document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString() + ' (session only)';
+}
+
+function statusBadge(s) {
+  const m = { 'Applied':'applied','Phone Screen':'screen','Interview':'interview','Final Round':'final','Offer':'offer','Rejected':'rejected','Withdrawn':'withdrawn','On Hold':'hold' };
+  return '<span class="badge badge-'+(m[s]||'applied')+'">'+s+'</span>';
+}
+
+function trackBadge(t) {
+  const m = { 'TPM':'tpm','Solutions Engineer':'se','Consulting':'consulting' };
+  return '<span class="badge badge-'+(m[t]||'other')+'">'+t+'</span>';
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('active', (i===0&&tab==='fulltime')||(i===1&&tab==='contractor')||(i===2&&tab==='referral')));
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  if (tab === 'referral') renderReferralTab();
+  else renderTable();
+}
+
+function renderReferralTab() {
+  const rows = load().filter(r => r.referral);
+  const tbody = document.getElementById('tbody-referral');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><p>No referral targets yet.</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(r => {
+    const jdBlock = r.jd ? '<div class="jd-text" id="jd-r'+r.id+'">'+escHtml(r.jd)+'</div><span class="jd-toggle" onclick="toggleJD(\'r'+r.id+'\')">show more</span>' : '—';
+    return '<tr>'
+      +'<td><strong>'+escHtml(r.company)+'</strong></td>'
+      +'<td>'+escHtml(r.role)+'</td>'
+      +'<td>'+trackBadge(r.track)+'</td>'
+      +'<td style="font-size:12px">'+escHtml(r.location||'—')+'</td>'
+      +'<td style="font-size:12px">'+escHtml(r.offer||'—')+'</td>'
+      +'<td>'+statusBadge(r.status)+'</td>'
+      +'<td style="font-size:12px">'+(r.url?'<a href="'+r.url+'" target="_blank" class="url-link">View posting</a>':'—')+'</td>'
+      +'<td class="jd-cell">'+jdBlock+'</td>'
+      +'<td style="max-width:180px;font-size:12px;color:#555">'+escHtml(r.notes||'—')+'</td>'
+      +'</tr>';
+  }).join('');
+}
+
+function parseOffer(s) {
+  if (!s) return 0;
+  const m = s.match(/\$?([\d,]+)/);
+  return m ? parseInt(m[1].replace(/,/g,'')) : 0;
+}
+
+function renderTable() {
+  const data = load();
+  const search = document.getElementById('search').value.toLowerCase();
+  const fStatus = document.getElementById('filter-status').value;
+  const fTrack = document.getElementById('filter-track').value;
+  const fResume = document.getElementById('filter-resume').value;
+  const sortBy = document.getElementById('sort-by').value;
+  const typeLabel = currentTab === 'fulltime' ? 'Full-time' : 'Contractor';
+
+  let rows = data.filter(r => {
+    if (r.type !== typeLabel) return false;
+    if (search && !r.company.toLowerCase().includes(search) && !r.role.toLowerCase().includes(search)) return false;
+    if (fStatus && r.status !== fStatus) return false;
+    if (fTrack && r.track !== fTrack) return false;
+    if (fResume && r.resume !== fResume) return false;
+    return true;
+  });
+
+  const statusOrder = ['Interview','Final Round','Phone Screen','Applied','On Hold','Offer','Rejected','Withdrawn'];
+  if (sortBy === 'date-desc') rows.sort((a,b) => (b.date||'').localeCompare(a.date||''));
+  else if (sortBy === 'date-asc') rows.sort((a,b) => (a.date||'').localeCompare(b.date||''));
+  else if (sortBy === 'company') rows.sort((a,b) => a.company.localeCompare(b.company));
+  else if (sortBy === 'status') rows.sort((a,b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status));
+  else if (sortBy === 'offer-desc') rows.sort((a,b) => parseOffer(b.offer) - parseOffer(a.offer));
+
+  const tbody = document.getElementById('tbody-'+currentTab);
+  const cols = currentTab === 'fulltime' ? 12 : 13;
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="'+cols+'"><div class="empty-state"><p>No applications here yet.</p><button class="btn btn-primary" onclick="openModal()">+ Add application</button></div></td></tr>';
+  } else {
+    tbody.innerHTML = rows.map(r => {
+      const rateCol = currentTab === 'contractor' ? '<td style="font-size:12px">'+(r.offer||'—')+'</td>' : '';
+      const jdBlock = r.jd ? '<div class="jd-text" id="jd-'+r.id+'">'+escHtml(r.jd)+'</div><span class="jd-toggle" onclick="toggleJD('+r.id+')">show more</span>' : '—';
+      return '<tr>'
+        +'<td><strong>'+escHtml(r.company)+'</strong>'+(r.url?'<br><a href="'+r.url+'" target="_blank" class="url-link">View posting</a>':'')+'</td>'
+        +'<td>'+escHtml(r.role)+'</td>'
+        +'<td>'+trackBadge(r.track)+'</td>'
+        +'<td style="font-size:12px">'+escHtml(r.location||'—')+'</td>'
+        +'<td style="font-size:12px;white-space:nowrap">'+escHtml(r.date||'—')+'</td>'
+        +'<td>'+statusBadge(r.status)+(r.round?'<div style="font-size:11px;color:#888;margin-top:3px">'+escHtml(r.round)+'</div>':'')+'</td>'
+        +'<td style="font-size:12px">'+escHtml(r.contactName||'—')+(r.contactEmail?'<div style="color:#888">'+escHtml(r.contactEmail)+'</div>':'')+'</td>'
+        +'<td style="font-size:12px;color:#555">'+escHtml(r.resume||'—')+'</td>'
+        +rateCol
+        +'<td style="font-size:12px;white-space:nowrap">'+escHtml(r.followup||'—')+'</td>'
+        +'<td class="jd-cell">'+jdBlock+'</td>'
+        +'<td style="max-width:180px;font-size:12px;color:#555">'+escHtml(r.notes||'—')+'</td>'
+        +'<td style="white-space:nowrap"><button class="btn btn-secondary btn-sm" onclick="editEntry('+r.id+')">Edit</button> <button class="btn btn-danger" onclick="deleteEntry('+r.id+')">Delete</button></td>'
+        +'</tr>';
+    }).join('');
+  }
+
+  const subset = data.filter(r => r.type === typeLabel);
+  const total = subset.length;
+  const active = subset.filter(r => !['Rejected','Withdrawn'].includes(r.status)).length;
+  const interviewing = subset.filter(r => ['Interview','Final Round'].includes(r.status)).length;
+  const offers = subset.filter(r => r.status === 'Offer').length;
+  document.getElementById('stats').innerHTML = [['Total',total],['Active',active],['Interviewing',interviewing],['Offers',offers]]
+    .map(([l,v]) => '<div class="stat"><div class="stat-label">'+l+'</div><div class="stat-value">'+v+'</div></div>').join('');
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toggleJD(id) {
+  const el = document.getElementById('jd-'+id);
+  const exp = el.classList.toggle('expanded');
+  el.nextElementSibling.textContent = exp ? 'show less' : 'show more';
+}
+
+
+function openModal() {
+  editingId = null;
+  document.getElementById('modal-title').textContent = 'Add application';
+  clearForm();
+  document.getElementById('f-type').value = currentTab === 'fulltime' ? 'Full-time' : 'Contractor';
+  document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('modal-bg').classList.add('open');
+}
+
+function editEntry(id) {
+  const r = load().find(x => x.id === id);
+  if (!r) return;
+  editingId = id;
+  document.getElementById('modal-title').textContent = 'Edit application';
+  document.getElementById('f-company').value = r.company||'';
+  document.getElementById('f-role').value = r.role||'';
+  document.getElementById('f-track').value = r.track||'TPM';
+  document.getElementById('f-type').value = r.type||'Full-time';
+  document.getElementById('f-location').value = r.location||'';
+  document.getElementById('f-date').value = r.date||'';
+  document.getElementById('f-status').value = r.status||'Applied';
+  document.getElementById('f-round').value = r.round||'';
+  document.getElementById('f-contact-name').value = r.contactName||'';
+  document.getElementById('f-contact-email').value = r.contactEmail||'';
+  document.getElementById('f-resume').value = r.resume||'';
+  document.getElementById('f-followup').value = r.followup||'';
+  document.getElementById('f-offer').value = r.offer||'';
+  document.getElementById('f-source').value = r.source||'';
+  document.getElementById('f-url').value = r.url||'';
+  document.getElementById('f-jd').value = r.jd||'';
+  document.getElementById('f-notes').value = r.notes||'';
+  document.getElementById('modal-bg').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-bg').classList.remove('open');
+  editingId = null;
+}
+
+function clearForm() {
+  ['company','role','location','date','round','contact-name','contact-email','followup','offer','source','url','jd','notes'].forEach(f => {
+    const el = document.getElementById('f-'+f); if(el) el.value = '';
+  });
+  document.getElementById('f-status').value = 'Applied';
+  document.getElementById('f-track').value = 'TPM';
+  document.getElementById('f-resume').value = '';
+}
+
+function saveEntry() {
+  const company = document.getElementById('f-company').value.trim();
+  const role = document.getElementById('f-role').value.trim();
+  if (!company || !role) { alert('Company and role are required.'); return; }
+  const entry = {
+    id: editingId || Date.now(),
+    type: document.getElementById('f-type').value,
+    company, role,
+    track: document.getElementById('f-track').value,
+    location: document.getElementById('f-location').value,
+    date: document.getElementById('f-date').value,
+    status: document.getElementById('f-status').value,
+    round: document.getElementById('f-round').value,
+    contactName: document.getElementById('f-contact-name').value,
+    contactEmail: document.getElementById('f-contact-email').value,
+    resume: document.getElementById('f-resume').value,
+    followup: document.getElementById('f-followup').value,
+    offer: document.getElementById('f-offer').value,
+    source: document.getElementById('f-source').value,
+    url: document.getElementById('f-url').value,
+    jd: document.getElementById('f-jd').value,
+    notes: document.getElementById('f-notes').value
+  };
+  const data = load();
+  if (editingId) { const i = data.findIndex(x => x.id === editingId); if(i !== -1) data[i] = entry; }
+  else { data.push(entry); }
+  save(data);
+  closeModal();
+  renderTable();
+}
+
+function deleteEntry(id) {
+  if (!confirm('Delete this application?')) return;
+  save(load().filter(x => x.id !== id));
+  renderTable();
+}
+
+document.getElementById('modal-bg').addEventListener('click', function(e) { if(e.target===this) closeModal(); });
+renderTable();
+</script>
+</body>
+</html>
