@@ -468,7 +468,7 @@ function renderTable() {
   const subset = data.filter(r => r.type === typeLabel);
   const total = subset.length;
   const active = subset.filter(r => !['Rejected','Withdrawn'].includes(r.status)).length;
-  const interviewing = subset.filter(r => ['Interview','Final Round'].includes(r.status)).length;
+  const interviewing = subset.filter(r => ['Interview','Final Round','Phone Screen Scheduled'].includes(r.status)).length;
   const offers = subset.filter(r => r.status === 'Offer').length;
   document.getElementById('stats').innerHTML = [['Total',total],['Active',active],['Interviewing',interviewing],['Offers',offers]]
     .map(([l,v]) => '<div class="stat"><div class="stat-label">'+l+'</div><div class="stat-value">'+v+'</div></div>').join('');
